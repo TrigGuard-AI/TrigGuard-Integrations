@@ -1,0 +1,28 @@
+version: 2.1
+
+# CodeQL stays on GitHub. This compiles every Go module.
+# The OER conformance test needs fixture files that are not in this repository.
+jobs:
+  go_modules:
+    docker:
+      - image: cimg/go:1.23
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Build Go modules
+          command: |
+            set -euo pipefail
+            found=0
+            while IFS= read -r mod; do
+              found=1
+              dir=$(dirname "$mod")
+              echo "go build ${dir}"
+              (cd "$dir" && go build ./...)
+            done < <(find . -name go.mod -not -path './.git/*')
+            test "$found" -eq 1
+
+workflows:
+  integration_checks:
+    jobs:
+      - go_modules
